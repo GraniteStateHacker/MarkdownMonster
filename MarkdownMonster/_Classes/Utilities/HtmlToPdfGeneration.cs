@@ -347,7 +347,11 @@ namespace MarkdownMonster
         Letter,
         Legal,
         A4,
-        B4
+        A5,
+        B4,
+        B5,
+        B6
+           
     }
 
     public enum PdfPageOrientation
