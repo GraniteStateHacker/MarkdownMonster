@@ -1,5 +1,6 @@
 var te = window.previewer = {
   mmEditor: null,
+  mmEditorAsync: null,   // WebViewPreviewer
   isPreviewEditorSync: false,
   highlightTimeout: 1800,
   codeScrolled: new Date().getTime() + 2500,
@@ -9,7 +10,65 @@ var te = window.previewer = {
   isCodeScrolled: function() {
     var t = new Date().getTime() - 350;
     return te.codeScrolled > t ? true : false;
+  },
+  // all dotnet calls go through this class
+  dotnetInterop: {
+    // return async instance if available, otherwise sync
+    getEditor: function() {
+      return te.mmEditorAsync || te.mmEditor || null;
+    },
+    // TODO: Make all this work with Async/Await once IE is dropped
+    // always return the sync instance for callbacks that return
+    // values (2 funcs). All others use the async version.
+    getEditorSync: function() {
+      return te.mmEditor || null;
+    },
+    previewContextMenu: function(parm) {
+      var editor = te.dotnetInterop.getEditor();
+      if (!editor)
+          return;
+
+      try {
+        editor.PreviewContextMenu(JSON.stringify(parm));
+      } catch(ex)  { }
+    },
+    previewLinkNavigation: function(url, rawHref) {
+      var editor = te.dotnetInterop.getEditorSync();
+      if (!editor)
+        return false;
+      try {
+        return editor.PreviewLinkNavigation(url, rawHref);
+      } catch (ex) { return false; }
+    },
+    gotoBottom: function(noRefresh, noSelection) {
+      let editor = te.dotnetInterop.getEditor();
+      if (!editor)
+        return;
+
+      try {
+        editor.GotoBottom(noRefresh || false, noSelection || false);
+      } catch(ex)  { }
+    },
+    gotoLine: function(line, updateEditor) {
+      let editor = te.dotnetInterop.getEditor();
+      if (!editor)
+        return;
+      try {
+        editor.GotoLine(line, updateEditor || false);
+      } catch (ex) {}
+    },
+    isPreviewEditorToSync: function() {
+      var editor = te.dotnetInterop.getEditorSync();
+      if (!editor)
+        return false;
+
+      try {
+        te.isPreviewEditorSync = editor.IsPreviewToEditorSync();
+        return te.isPreviewEditorSync;
+      } catch(ex) { return false; }
+    }
   }
+
 };
 var isDebug = false;
 
@@ -27,13 +86,14 @@ function initializeinterop(editor) {
     else if (window.dotnetProxy) {
       te.mmEditor = window.dotnetProxy;
     }
-    // value passed
+    // value passed explicitly from host as parameter
     else {
       te.mmEditor = editor;
     }
 
     if (te.mmEditor) {
-      te.isPreviewEditorSync = te.mmEditor.IsPreviewToEditorSync();
+      // te.mmEditor.IsPreviewToEditorSync();
+      te.isPreviewEditorSync = te.dotnetInterop.isPreviewEditorToSync();
     }
 
     scroll();
@@ -53,7 +113,7 @@ $(document).ready(function() {
 
             // Notify of link navigation and handle external urls
             // if not handled elsewhere
-            if (te.mmEditor && te.mmEditor.PreviewLinkNavigation(url, rawHref)) {
+            if (te.mmEditor && te.dotnetInterop.previewLinkNavigation(url, rawHref)) { //te.mmEditor.PreviewLinkNavigation(url, rawHref)) {
                 // it true editor handled the navigation
                 e.preventDefault();
                 return false;
@@ -90,7 +150,8 @@ $(document).on("contextmenu",
         }
         
         if (te.mmEditor) {
-          te.mmEditor.PreviewContextMenu(JSON.stringify(parm));
+          te.dotnetInterop.previewContextMenu(JSON.stringify(parm));
+          //te.mmEditor.PreviewContextMenu(JSON.stringify(parm));
           return false;
         }
 
@@ -133,12 +194,14 @@ var scroll = debounce(function (event) {
     var sh = window.document.documentElement.scrollHeight - window.document.documentElement.clientHeight;
 
     if (st < 3) {
-      te.mmEditor.gotoLine(0, true);
+      te.dotnetInterop.gotoLine(0, true);
+      //te.mmEditor.gotoLine(0, true);
         return;
     }
     //// if we're on the last page
     if (sh === st) {
-      te.mmEditor.gotoBottom(true, true);
+      te.dotnetInterop.gotoBottom(true, true);
+      //te.mmEditor.gotoBottom(true, true);
       return;
     }
 
@@ -164,7 +227,8 @@ var scroll = debounce(function (event) {
     id = id.replace("pragma-line-", "");
 
     var line = (id * 1) - 4;
-    te.mmEditor.gotoLine(line, true);
+    te.dotnetInterop.gotoLine(line, true);
+    //te.mmEditor.gotoLine(line, true);
 
     //te.mmEditor.gotoLine(line.toString() + "|" +"true");
 },50);
@@ -214,6 +278,7 @@ function highlightCode(lineno) {
             $code.hasClass("language-plain")) {
                 $code.addClass("hljs");
                 continue;
+
         }
 
         // render only matched lines that are in viewport + padding
@@ -274,7 +339,7 @@ function scrollToPragmaLine(lineno, headerId, noScrollTimeout, noScrollTopAdjust
         te.setCodeScrolled();
 
       if (lineno < 2) {
-        $("html").scrollTop(0);
+        $(document).scrollTop(0);
         return;
       }
 
@@ -308,7 +373,7 @@ function scrollToPragmaLine(lineno, headerId, noScrollTimeout, noScrollTopAdjust
               break;
           }
         }
-        if ($el.length < 1)
+        if ($el.length < 1)  // couldn't match anything
           return;
       }
 
@@ -323,7 +388,7 @@ function scrollToPragmaLine(lineno, headerId, noScrollTimeout, noScrollTopAdjust
         if (lineno > 1)
           scrollTop = $el.offset().top - 25; // -150
 
-        $("html").scrollTop(scrollTop);
+        $(document).scrollTop(scrollTop);
       }
 //  }, 10);
 }

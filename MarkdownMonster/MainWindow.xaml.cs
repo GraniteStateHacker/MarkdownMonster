@@ -405,8 +405,6 @@ namespace MarkdownMonster
 
         protected void OnActivated(object sender, EventArgs e)
         {
-            DocumentFileWatcher.CheckFileChangeInOpenDocuments();
-
             // Active Menu Item deactivation don't refocus
             if (MainMenu.Items.OfType<MenuItem>().Any(item => item.IsHighlighted))
                 return;
@@ -2660,6 +2658,7 @@ Do you want to continue anyway?", "Disable Markdown Script Rendering",
 
         private void PreviewTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            Model.ActiveEditor?.AceEditor?.SetEditorStyling();
             PreviewBrowser?.PreviewMarkdownAsync();
         }
 

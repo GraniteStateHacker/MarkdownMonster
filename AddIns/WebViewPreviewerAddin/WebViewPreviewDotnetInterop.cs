@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using MarkdownMonster;
 using MarkdownMonster.BrowserComInterop;
@@ -51,11 +52,23 @@ namespace WebViewPreviewerAddin
 
 
         /// <summary>
-        /// Initial call into JavaScript to 
+        /// Initial call *into* JavaScript to 
         /// </summary>
         public void InitializeInterop()
         {
-            JsInterop.InitializeInterop();
+            // async - fire and forget we don't have to wait
+            _ = JsInterop.InitializeInterop().ConfigureAwait(false).GetAwaiter();
+        }
+
+        #region Async Callbacks that don't return a value
+
+        /// <summary>
+        /// Intial Call into JavaScript
+        /// </summary>
+        /// <returns></returns>
+        public async Task InitializeInteropAsync()
+        {
+            await JsInterop.InitializeInterop();
         }
 
 
@@ -64,11 +77,14 @@ namespace WebViewPreviewerAddin
         /// </summary>
         /// <param name="editorLine"></param>
         /// <param name="noRefresh"></param>
-        public void gotoLine(object editorLine, object noRefresh)
+        public async Task GotoLine(object editorLine, object noRefresh)
         {
-            Model.Window.Dispatcher.Invoke(() =>
+            await Model.Window.Dispatcher.InvokeAsync(() =>
             {
-                Model.ActiveEditor?.GotoLine(Convert.ToInt32(editorLine), (bool)noRefresh);
+                try
+                {
+                    Model.ActiveEditor?.GotoLine(Convert.ToInt32(editorLine), (bool) noRefresh);
+                }catch {}
             });
         }
 
@@ -77,29 +93,31 @@ namespace WebViewPreviewerAddin
         /// </summary>
         /// <param name="noRefresh"></param>
         /// <param name="noSelection"></param>
-        public void GotoBottom(object noRefresh, object noSelection)
+        public async Task GotoBottom(object noRefresh, object noSelection)
         {
-            Model.Window.Dispatcher.Invoke(() =>
+            await Model.Window.Dispatcher.InvokeAsync(() =>
             {
                 Model.ActiveEditor?.GotoBottom((bool)noRefresh, (bool)noSelection);
             });
         }
 
-
         /// <summary>
         /// Shows the WPF Preview menu
         /// </summary>
         /// <param name="positionAndElementType"></param>
-        public void PreviewContextMenu(string positionAndElementType)
+        public async Task PreviewContextMenu(string positionAndElementType)
         {
-            Model.Window.Dispatcher.Invoke(() =>
+            await Model.Window.Dispatcher.InvokeAsync(() =>
             {
                 var pos = JsonSerializationUtils.Deserialize(positionAndElementType, typeof(PositionAndDocumentType));
                 mmApp.Model.Window.PreviewBrowser.ExecuteCommand("PreviewContextMenu", pos);
             });
-
         }
 
+        #endregion
+
+
+        #region Sync Calls that return a value for now
 
         /// <summary>
         /// Fired when a link is clicked in the preview editor. Opens a new
@@ -111,11 +129,12 @@ namespace WebViewPreviewerAddin
         /// <returns></returns>
         public bool PreviewLinkNavigation(string url, string src = null)
         {
-            return Model.Window.Dispatcher.Invoke(() =>
+            bool handled = Model.Window.Dispatcher.Invoke(() =>
             {
                 var editor = Model.ActiveEditor;
                 return editor.PreviewLinkNavigation(url, src);
             });
+            return handled;
         }
 
 
@@ -126,7 +145,7 @@ namespace WebViewPreviewerAddin
         /// <returns></returns>
         public bool IsPreviewToEditorSync()
         {
-            return Model.Window.Dispatcher.Invoke(() =>
+            bool result =  Model.Window.Dispatcher.Invoke(() =>
             {
                 try
                 {
@@ -140,7 +159,10 @@ namespace WebViewPreviewerAddin
                     return false;
                 }
             });
+            return result;
         }
+
+        #endregion
     }
 }
 

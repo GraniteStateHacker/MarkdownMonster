@@ -4,13 +4,31 @@
 [![Chocolatey](https://img.shields.io/chocolatey/dt/markdownmonster.svg)](https://chocolatey.org/packages/MarkdownMonster)
 [![Web Site](https://img.shields.io/badge/Markdown_Monster-WebSite-blue.svg)](https://markdownmonster.west-wind.com)
 
+### 1.25.14
+<small>December 28th, 2020</small>
+
+* **Update Open Document Change Detection**  
+Updated logic to handle change detection on open documents. When documents are open and unchanged, the document is immediately updated with changes from disk. If the open document has changes and the underlying document changes, nothing happens until you save. A new dialog allows you to choose between your version, their version or to run the configure Git Diff tool to compare versions and merge changes.
+
+* **Add PDF Page Sizes to Save To PDF**  
+Added all additional supported PDF print formats to the paper type dropdown on the PDF Export dialog. Adds all Ax and Bx types as well as various named types.
+
+* **Chromium Previewer Updates**  
+There have been a number of updates to the Chromium Previewer Addin to improve stability and performance.  
+*Unfortunately, there are a few issues in the current version of the WebView2 runtime (.644) that affect preview->editor sync, and that are fixed in preview versions that are not available yet for GA downloads. These issues will be fixed as soon as a newer runtime becomes available.*
+
+* **Fix: Links in Headers for Document Outline**  
+Fix bug where links in headers where showing incorrectly in the Document viewer. Fix parses links and retrieves the text properly for display in the Document Outline. Also fixed in the TOC embedding logic.
+
+
 ### 1.25.12
+<small>December 5th, 2020</small>
 
 * **Chromium Previewer Browser Addin (Preview)**  
-Added a built-in addin that can toggle between the native IE based preview browser and a new WebView2 based Edge Chromium  Preview browser. 
+Added a built-in addin that can toggle between the native IE based preview browser and a new WebView2 based Edge Chromium  Preview browser. This addin provides better compatibility with common browsers and allows support for some related technologies like Mermaid Charts to render natively.
 
 * **Update Mermaid Rendering in the Preview**  
-Mermaid support in MM has always been minimal since it uses the Internet Explorer engine for the preview pane. Mermaid recently removed their already terrible support for Mermaid completely, so MM now renders a placeholder rather than the Mermaid chart in the previewer. The placeholder includes a clickable link that opens your default browser and displays the document containing the diagram and navigates to the Id of the mermaid diagram.
+Mermaid support in MM has always been minimal since it uses the Internet Explorer engine for the preview pane. Mermaid recently removed their already terrible support for IE completely, so MM now renders a placeholder rather than the Mermaid chart in the default (IE based) previewer. The placeholder includes a clickable link that opens your default browser and displays the document containing the diagram and navigates to the Id of the mermaid diagram. Note in the Chromium addin previewer, Mermaid charts are properly rendered inline.
 
 * **[Markdown Monster Web Server Enhancements](https://markdownmonster.west-wind.com/docs/_5s1009yx1.htm)**  
 Markdown Monster includes a local Web server that can now be used to open new or existing documents and retrieve document content from the active document. Added support for retrieving the active document's content. Added Web page examples that interact with Markdown Monster. There are also new `-startwebserver` and `-stopwebserver` flags to start and stop the Web server to ensure that the local server is running. Added Web Browser HTML samples in  `SampleDocuments\BrowserIntegration` that demonstrate how to interact with MM from a Web page. 

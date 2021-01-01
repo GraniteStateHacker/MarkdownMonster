@@ -32,9 +32,9 @@ namespace WebViewPreviewerAddin
         /// <summary>
         /// Initialize the document
         /// </summary>
-        public void InitializeInterop()
+        public async Task InitializeInterop()
         {
-            _ = CallMethod("initializeinterop");
+            await CallMethod("initializeinterop");
         }
 
 
@@ -44,7 +44,7 @@ namespace WebViewPreviewerAddin
         /// </summary>
         /// <param name="html"></param>
         /// <param name="lineNo"></param>
-        public async void UpdateDocumentContent(string html, int lineNo)
+        public async Task UpdateDocumentContent(string html, int lineNo)
         {
             if (_webViewPreviewDotnetInterop.WebBrowser == null)
                 return;
@@ -66,7 +66,9 @@ namespace WebViewPreviewerAddin
             bool updateCodeBlocks = true,
             bool noScrollTimeout = false, bool noScrollTopAdjustment = false)
         {
-            await CallMethod("scrollToPragmaLine", editorLineNumber, headerId, noScrollTimeout, noScrollTopAdjustment);
+            await CallMethod("scrollToPragmaLine",
+                editorLineNumber, headerId,
+                noScrollTimeout, noScrollTopAdjustment);
         }
 
         #region Async Invocation Utilities
@@ -79,7 +81,7 @@ namespace WebViewPreviewerAddin
         public async Task<TResult> CallMethod<TResult>(string method, params object[] parameters)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("textEditor." + method + "(");
+            sb.Append(method + "(");
 
             if (parameters != null)
             {
